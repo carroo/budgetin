@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget Mingguan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-6">
+
+  <!-- ANGKA UTAMA -->
+  <div class="text-center space-y-2">
+    <h1 class="text-sm text-gray-500 tracking-wide">Saran Pengeluaran Hari Ini</h1>
+    <div id="recommend" class="text-7xl font-extrabold text-blue-600">0</div>
+  </div>
+
+  <!-- TOMBOL -->
+  <div class="mt-10 flex flex-col gap-3 w-full max-w-xs">
+    <button onclick="openModal('spendModal')" class="bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">💸 Input Pengeluaran</button>
+    <button onclick="openModal('budgetModal')" class="bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">⚙ Atur Budget</button>
+    <button onclick="openModal('historyModal')" class="bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-800">📜 Riwayat</button>
+  </div>
+
+  <!-- MODAL: ATUR BUDGET -->
+  <div id="budgetModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl p-6 w-80">
+      <h2 class="text-lg font-bold mb-3 text-center">Atur Budget Mingguan</h2>
+      <input id="weeklyBudget" type="number" placeholder="Contoh: 350"
+             class="w-full border p-2 rounded-lg mb-4 text-center focus:ring-2 focus:ring-blue-400 outline-none">
+      <button onclick="setBudget()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700">Simpan</button>
+      <button onclick="closeModal('budgetModal')" class="w-full mt-2 text-gray-500">Batal</button>
+    </div>
+  </div>
+
+  <!-- MODAL: INPUT PENGELUARAN -->
+  <div id="spendModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl p-6 w-80">
+      <h2 class="text-lg font-bold mb-3 text-center">Input Pengeluaran Hari Ini</h2>
+      <input id="spendInput" type="number" placeholder="Contoh: 40"
+             class="w-full border p-2 rounded-lg mb-4 text-center focus:ring-2 focus:ring-green-400 outline-none">
+      <button onclick="addExpense()" class="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700">Simpan</button>
+      <button onclick="closeModal('spendModal')" class="w-full mt-2 text-gray-500">Batal</button>
+    </div>
+  </div>
+
+  <!-- MODAL: HISTORY -->
+  <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center overflow-y-auto">
+    <div class="bg-white rounded-xl p-6 w-80 max-h-[80vh] overflow-y-auto">
+      <h2 class="text-lg font-bold mb-4 text-center">Riwayat Minggu</h2>
+      <ul id="historyList" class="space-y-2 text-sm text-gray-700"></ul>
+      <button onclick="closeModal('historyModal')" class="w-full mt-4 text-gray-500">Tutup</button>
+    </div>
+  </div>
+
+  <script>
+    let data = JSON.parse(localStorage.getItem("budgetData")) || null;
+    let history = JSON.parse(localStorage.getItem("budgetHistory")) || [];
+
+    function updateUI() {
+      const rec = document.getElementById("recommend");
+      if (!data) {
+        rec.textContent = "0";
+        return;
+      }
+
+      if (data.daysLeft <= 0) {
+        rec.textContent = "0";
+      } else {
+        rec.textContent = Math.floor(data.remaining / data.daysLeft);
+      }
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add("hidden");
+    }
+
+    function setBudget() {
+      const budget = parseInt(document.getElementById("weeklyBudget").value);
+      if (isNaN(budget) || budget <= 0) return alert("Masukkan nominal yang benar!");
+      data = { weeklyBudget: budget, remaining: budget, daysLeft: 7, spent: 0, week: (history.length + 1) };
+      localStorage.setItem("budgetData", JSON.stringify(data));
+      closeModal('budgetModal');
+      updateUI();
+    }
+
+    function addExpense() {
+      if (!data) return alert("Atur budget dulu ya!");
+      const spend = parseInt(document.getElementById("spendInput").value);
+      if (isNaN(spend) || spend < 0) return alert("Masukkan pengeluaran valid!");
+      if (data.daysLeft <= 0) return alert("Minggu sudah berakhir. Mulai minggu baru dulu.");
+
+      data.remaining -= spend;
+      data.spent += spend;
+      data.daysLeft -= 1;
+      localStorage.setItem("budgetData", JSON.stringify(data));
+      document.getElementById("spendInput").value = "";
+      closeModal('spendModal');
+      updateUI();
+
+      if (data.daysLeft === 0) {
+        alert("Minggu selesai! Data disimpan ke riwayat.");
+        history.push({
+          week: data.week,
+          budget: data.weeklyBudget,
+          spent: data.spent,
+          remaining: data.remaining
+        });
+        localStorage.setItem("budgetHistory", JSON.stringify(history));
+        localStorage.removeItem("budgetData");
+        data = null;
+        updateUI();
+      }
+    }
+
+    function loadHistory() {
+      const list = document.getElementById("historyList");
+      list.innerHTML = "";
+      if (history.length === 0) {
+        list.innerHTML = "<li class='text-center text-gray-400'>Belum ada riwayat</li>";
+        return;
+      }
+      history.slice(-10).reverse().forEach(item => {
+        const li = document.createElement("li");
+        li.className = "bg-gray-100 rounded-md px-3 py-2";
+        li.textContent = `Minggu ${item.week}: Budget ${item.budget}, Keluar ${item.spent}, Sisa ${item.remaining}`;
+        list.appendChild(li);
+      });
+    }
+
+    // Saat modal riwayat dibuka
+    document.querySelector("[onclick=\"openModal('historyModal')\"]").addEventListener("click", loadHistory);
+
+    updateUI();
+  </script>
+</body>
+</html>
