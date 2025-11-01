@@ -45,11 +45,11 @@
     <div class="flex items-center justify-center gap-4">
       <div class="text-center">
         <div class="text-xs text-gray-400 mb-1">Saldo Hari Ini</div>
-        <div id="dailyBudget" class="text-6xl font-extrabold text-blue-600">0</div>
+        <div id="dailyBudget" class="text-6xl font-extrabold text-blue-600 cursor-pointer hover:text-blue-700" onclick="showDailyBudgetInfo()">0</div>
       </div>
       <div class="text-center">
         <div class="text-xs text-gray-400 mb-1">Sisa Saldo</div>
-        <div id="remainingDaily" class="text-6xl font-extrabold" style="color: #10B981;">0</div>
+        <div id="remainingDaily" class="text-6xl font-extrabold cursor-pointer hover:opacity-80" style="color: #10B981;" onclick="showRemainingDailyInfo()">0</div>
       </div>
     </div>
     <div class="text-sm text-gray-600">
@@ -390,6 +390,45 @@
         `;
         list.appendChild(li);
       });
+    }
+
+    // FUNGSI UNTUK MENAMPILKAN INFO PERHITUNGAN
+    function showDailyBudgetInfo() {
+      if (!data) {
+        showNotification("Belum Ada Data", "Atur budget mingguan terlebih dahulu untuk melihat perhitungan.", "info");
+        return;
+      }
+      
+      const currentDay = 8 - data.daysLeft;
+      let calculation = "";
+      
+      if (currentDay === 1) {
+        // Hari pertama
+        calculation = `Budget Mingguan ÷ 7 Hari = ${data.weeklyBudget.toLocaleString('id-ID')} ÷ 7 = ${data.dailyBudget.toLocaleString('id-ID')}`;
+      } else {
+        // Hari selanjutnya
+        calculation = `Sisa Budget Mingguan ÷ Sisa Hari = ${data.remaining.toLocaleString('id-ID')} ÷ ${data.daysLeft} = ${data.dailyBudget.toLocaleString('id-ID')}`;
+      }
+      
+      showNotification("Perhitungan Saldo Harian", calculation, "info");
+    }
+
+    function showRemainingDailyInfo() {
+      if (!data) {
+        showNotification("Belum Ada Data", "Atur budget mingguan terlebih dahulu untuk melihat perhitungan.", "info");
+        return;
+      }
+      
+      const totalSpentToday = data.dailyBudget - data.dailyRemaining;
+      let calculation = "";
+      
+      if (totalSpentToday === 0) {
+        calculation = `Saldo Harian - Pengeluaran Hari Ini = ${data.dailyBudget.toLocaleString('id-ID')} - 0 = ${data.dailyRemaining.toLocaleString('id-ID')}`;
+      } else {
+        calculation = `Saldo Harian - Pengeluaran Hari Ini = ${data.dailyBudget.toLocaleString('id-ID')} - ${totalSpentToday.toLocaleString('id-ID')} = ${data.dailyRemaining.toLocaleString('id-ID')}`;
+      }
+      
+      showNotification("Perhitungan Sisa Saldo", calculation, "info");
     }
 
     // Saat modal riwayat dibuka
