@@ -39,6 +39,9 @@
     <div id="budgetSummary" class="text-xs text-gray-400 -mt-2 hidden">
       <span id="weeklyBudgetAmount">0</span>/<span id="idealDailyBudgetAmount">0</span>
     </div>
+    <div id="weeklyRemaining" class="text-sm text-gray-600 -mt-1 hidden">
+      <span id="weeklyRemainingAmount">0</span>
+    </div>
     <div class="flex items-center justify-center gap-4">
       <div class="text-center">
         <div class="text-xs text-gray-400 mb-1">Saldo Hari Ini</div>
@@ -198,6 +201,8 @@
       const budgetSummaryEl = document.getElementById("budgetSummary");
       const weeklyBudgetAmountEl = document.getElementById("weeklyBudgetAmount");
       const idealDailyBudgetAmountEl = document.getElementById("idealDailyBudgetAmount");
+      const weeklyRemainingEl = document.getElementById("weeklyRemaining");
+      const weeklyRemainingAmountEl = document.getElementById("weeklyRemainingAmount");
       
       if (!data) {
         dailyBudgetEl.textContent = "0";
@@ -208,6 +213,7 @@
         remainingDailyEl.style.color = "#10B981";
         budgetButtonEl.style.display = "block"; // Tampilkan tombol budget jika belum ada data
         budgetSummaryEl.classList.add("hidden"); // Sembunyikan budget summary
+        weeklyRemainingEl.classList.add("hidden"); // Sembunyikan sisa saldo mingguan
         return;
       }
 
@@ -225,6 +231,17 @@
       budgetSummaryEl.classList.remove("hidden");
       weeklyBudgetAmountEl.textContent = data.weeklyBudget;
       idealDailyBudgetAmountEl.textContent = idealDailyBudget;
+      
+      // Tampilkan sisa saldo mingguan
+      weeklyRemainingEl.classList.remove("hidden");
+      weeklyRemainingAmountEl.textContent = data.remaining.toLocaleString('id-ID');
+      
+      // Ubah warna sisa saldo mingguan berdasarkan positif/negatif
+      if (data.remaining >= 0) {
+        weeklyRemainingAmountEl.style.color = "#059669"; // hijau tua
+      } else {
+        weeklyRemainingAmountEl.style.color = "#DC2626"; // merah tua
+      }
       
       // Sembunyikan tombol budget jika sudah ada data
       budgetButtonEl.style.display = "none";
